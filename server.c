@@ -9,18 +9,31 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
+
+char* logo =
+"BATTLESHIPS\n\n"
+"                                   )___(\n"
+"                           _______/__/_\n"
+"                  ___     /===========|   ___\n"
+" ____       __   [\\\\\\]___/____________|__[///]   __\n"
+" \\   \\_____[\\\\]__/___________________________\\\\__[//]___\n"
+"  \\A+L                                                 |\n"
+"   \\                                                  /\n"
+"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
+"Game by Angela and Lucas\n";
+
 //network
 int port;
 int connected = 0; 
-struct sockaddr_in client1 = {0};
-struct sockaddr_in client2 = {0};
+struct sockaddr_in clients[2];
+
+int is_new_client(struct sockaddr_in address);
+int handle_new_client(struct sockaddr_in address);
+int process_demand(int sockfd, char* msg, int client_n);
 
 //logic
 int size, carriers, battleships, destroyers, submarines; 
 
-
-int is_new_client(struct sockaddr_in address);
-int handle_new_client(struct sockaddr_in address);
 
 int main(int argc, char* argv[]){
 
@@ -70,38 +83,72 @@ int main(int argc, char* argv[]){
             msg[received_len] = '\0';
         }
 
-        if(is_new_client(temp_client_addr) == 0){
-            if(handle_new_client(temp_client_addr) == -1){
-                fprintf(stderr, "Error : Already 2 clients connected");
-                return 1;
-            }
+        int client_n = is_new_client(temp_client_addr);
+        if(client_n == -1){
+            client_n = handle_new_client(temp_client_addr);
         }
-        
 
+        if(client_n != -1){
+            int flag = process_demand(sockfd, msg, client_n);
+
+        }
 
     }
+
     return 0;
 }
 
+// network
+
 int is_new_client(struct sockaddr_in address){
 
-    if(client1.sin_addr.s_addr == address.sin_addr.s_addr && client1.sin_port == address.sin_port){
-        return 1;
+    for(int i = 0; i<connected; i++){
+        if(clients[i].sin_addr.s_addr == address.sin_addr.s_addr && clients[i].sin_port == address.sin_port){
+            return i;
+        }
     }
-
-    if(client2.sin_addr.s_addr == address.sin_addr.s_addr && client2.sin_port == address.sin_port){
-        return 2;
-    }
-
-    return 0;
+    
+    return -1;
 }
 
 int handle_new_client(struct sockaddr_in address){
 
     if(connected < 2){
+
+        clients[connected] = address;
         connected += 1;
-        return 0;
+        return connected-1;
     }
-    
+
     return -1;
 }
+
+int process_demand(int sockfd, char* msg, int client_n){
+
+    char* code = "";
+    char* instruction = "";
+    char *delimiter = strchr(msg, ' ');
+
+    int length_code = delimiter - msg;
+        int length_instruction = strlen(msg) - length_code - 1;
+
+        // Copy parts into respective arrays
+        strncpy(code, msg, length_code);
+        code[length_code] = '\0';  // Null-terminate the first part
+
+        strncpy(instruction, delimiter + 1, length_instruction);
+        instruction[length_instruction] = '\0';
+
+    if(strcmp(code,"hello") == 0){
+
+        if (sendto(sockfd, logo, strlen(logo), 0, (const struct sockaddr*)&clients[client_n], sizeof(clients[client_n])) == -1){
+        fprintf(stderr, "Error : sending message");
+        close(sockfd);
+        return 1;
+    }  
+    }
+
+    return 0;
+}
+
+// logic

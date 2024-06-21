@@ -51,22 +51,23 @@ int main(int argc, char* argv[]){
         return 1;
     }  
 
-    socklen_t server_addr_len = sizeof(server_addr);
-    if (recvfrom(sockfd, msg, sizeof(msg) - 1, 0, (struct sockaddr *)&server_addr, &server_addr_len) == -1){
-        fprintf(stderr, "Error : receiving message");
-        close(sockfd);
-        return 1;
-    }
-
-    if(strcmp(msg, "OK") != 0){
-        fprintf(stderr, "Error : connection failed");
-        close(sockfd);
-        return 1;
-    }
-
     while(1){
 
-        
+        socklen_t server_addr_len = sizeof(server_addr);
+        ssize_t received_len = recvfrom(sockfd, msg, sizeof(msg) - 1, 0, (struct sockaddr *)&server_addr, &server_addr_len);
+
+        if (received_len == -1) {
+            fprintf(stderr, "Error : getting back message");
+            close(sockfd);
+            return 1;
+        }
+
+        msg[received_len] = '\0';
+
+        // print the message
+
+        printf("%s", msg);
+
     }
 
     return 0;
