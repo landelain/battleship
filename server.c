@@ -58,15 +58,16 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(port);
+    struct sockaddr_in *server_addr = malloc(sizeof(struct sockaddr_in));
+    memset(server_addr, 0, sizeof(server_addr));
+    server_addr->sin_family = AF_INET;
+    server_addr->sin_addr.s_addr = htonl(INADDR_ANY);
+    server_addr->sin_port = htons(port);
 
-    if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+    if (bind(sockfd, (struct sockaddr *)server_addr, sizeof(*server_addr)) == -1) {
         fprintf(stderr,"Error: bind failed\n");
         close(sockfd);
+        free(server_addr);
         return 1;
     }
 
@@ -74,26 +75,28 @@ int main(int argc, char* argv[]){
 
     while(1){
 
-        struct sockaddr_in temp_client_addr;
-        socklen_t temp_client_addr_len = sizeof(temp_client_addr);
+        struct sockaddr_in *temp_client_addr = malloc(sizeof(struct sockaddr_in));
+        socklen_t temp_client_addr_len = sizeof(*temp_client_addr);
         char msg[100];
 
-        ssize_t received_len = recvfrom(sockfd, msg, sizeof(msg), 0, (struct sockaddr *)&temp_client_addr, &temp_client_addr_len);
+        ssize_t received_len = recvfrom(sockfd, msg, sizeof(msg), 0, (struct sockaddr *)temp_client_addr, &temp_client_addr_len);
         if (received_len > 0) {
             msg[received_len] = '\0';
         }
 
-        int client_n = is_new_client(temp_client_addr);
+        int client_n = is_new_client(*temp_client_addr);
         if(client_n == -1){
-            client_n = handle_new_client(temp_client_addr);
+            client_n = handle_new_client(*temp_client_addr);
         }
 
         if(client_n != -1){
             int flag = process_demand(sockfd, msg, client_n);
 
         }
-
+        free(temp_client_addr);
     }
+    close(sockfd);
+    free(server_addr);
 
     return 0;
 }
@@ -123,11 +126,26 @@ int handle_new_client(struct sockaddr_in address){
     return -1;
 }
 
+
+/*
+Not sure what we're trying to do here, might be useful to have the message type to be an integer so we can easily check:
+msg[0] == 0 --> msg is of type TXT, so if *(msg+2) == "Hello" --> client is trying to connect
+
+I'd have a function to split message type and info and store that in a struct, then have different functions to handle different
+message types (check tic-tac-toe project)
+
+
+
+IDK what you're trying to do here but strchr(msg, ' ') acts weirdly because there is no space in the received message: "hello"
+so later on it causes a segmentation fault in strncpy
+
+What are code, instruction and delimiter supposed to be?
+*/
 int process_demand(int sockfd, char* msg, int client_n){
 
-    char* code = "";
-    char* instruction = "";
-    char *delimiter = strchr(msg, ' ');
+    char* code = malloc(20);
+    char* instruction = malloc(20);
+    char *delimiter = strchr(msg, " ");
 
     int length_code = delimiter - msg;
         int length_instruction = strlen(msg) - length_code - 1;
@@ -143,11 +161,14 @@ int process_demand(int sockfd, char* msg, int client_n){
 
         if (sendto(sockfd, logo, strlen(logo), 0, (const struct sockaddr*)&clients[client_n], sizeof(clients[client_n])) == -1){
         fprintf(stderr, "Error : sending message");
+        free(code);
+        free(instruction);
         close(sockfd);
         return 1;
     }  
     }
-
+    free(code);
+    free(instruction);
     return 0;
 }
 
