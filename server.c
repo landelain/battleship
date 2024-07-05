@@ -11,16 +11,16 @@
 
 
 char* logo =
-"BATTLESHIPS\n\n"
-"                                   )___(\n"
-"                           _______/__/_\n"
-"                  ___     /===========|   ___\n"
-" ____       __   [\\\\\\]___/____________|__[///]   __\n"
-" \\   \\_____[\\\\]__/___________________________\\\\__[//]___\n"
-"  \\A+L                                                 |\n"
-"   \\                                                  /\n"
-"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
-"Game by Angela and Lucas\n";
+    "\n\nBATTLESHIPS\n\n"
+    "                                   )___(\\\n"
+    "                           _______/__/_\\\n"
+    "                  ___     /===========|   ___\n"
+    " ____       __   [\\\\\\]___/____________|__[///]   __\n"
+    " \\   \\_____[\\\\]__/___________________________\\\\__[//]___\n"
+    "  \\A+L                                                 |\n"
+    "   \\                                                  /\n"
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
+    "Game by Angela and Lucas\n\n";
 
 //network
 int port;
@@ -30,6 +30,7 @@ struct sockaddr_in clients[2];
 int is_new_client(struct sockaddr_in address);
 int handle_new_client(struct sockaddr_in address);
 int process_demand(int sockfd, char* msg, int client_n);
+int start_game();
 
 //logic
 int size, carriers, battleships, destroyers, submarines; 
@@ -71,13 +72,15 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    printf("\nThe server is listening\n\n");
+    system("clear");
+    printf("%s", logo);
+    printf("\nThe server is on with parameters :\n-port:%d\n-size:%d\n-carriers:%d\n-battleships:%d\n-destroyers:%d\n-submarines:%d\n\n",port, size, carriers, battleships, destroyers, submarines);
 
     while(1){
 
         struct sockaddr_in *temp_client_addr = malloc(sizeof(struct sockaddr_in));
         socklen_t temp_client_addr_len = sizeof(*temp_client_addr);
-        char msg[100];
+        char msg[500];
 
         ssize_t received_len = recvfrom(sockfd, msg, sizeof(msg), 0, (struct sockaddr *)temp_client_addr, &temp_client_addr_len);
         if (received_len > 0) {
@@ -120,6 +123,7 @@ int handle_new_client(struct sockaddr_in address){
 
         clients[connected] = address;
         connected += 1;
+        fprintf(stderr,"server: client %d connected\n", connected);
         return connected-1;
     }
 
@@ -143,33 +147,37 @@ What are code, instruction and delimiter supposed to be?
 */
 int process_demand(int sockfd, char* msg, int client_n){
 
-    char* code = malloc(20);
-    char* instruction = malloc(20);
-    char *delimiter = strchr(msg, " ");
-
-    int length_code = delimiter - msg;
-        int length_instruction = strlen(msg) - length_code - 1;
-
-        // Copy parts into respective arrays
-        strncpy(code, msg, length_code);
-        code[length_code] = '\0';  // Null-terminate the first part
-
-        strncpy(instruction, delimiter + 1, length_instruction);
-        instruction[length_instruction] = '\0';
-
-    if(strcmp(code,"hello") == 0){
-
+    if(atoi(msg) == 0){ // initial message
         if (sendto(sockfd, logo, strlen(logo), 0, (const struct sockaddr*)&clients[client_n], sizeof(clients[client_n])) == -1){
-        fprintf(stderr, "Error : sending message");
-        free(code);
-        free(instruction);
-        close(sockfd);
-        return 1;
-    }  
+            fprintf(stderr, "Error : sending message");
+            close(sockfd);
+            return 1;
+        }
+        if(connected ==2){
+            start_game(sockfd);
+        }
     }
-    free(code);
-    free(instruction);
+
     return 0;
 }
 
 // logic
+
+int start_game(int sockfd){
+
+    char msg[2][100];
+    strcpy(msg[0], "server: the game is starting, you will play as player 1\n\n");
+    strcpy(msg[1], "server: the game is starting, you will play as player 2\n\n");
+
+    for(int i = 0; i<2; i++){
+        if (sendto(sockfd, msg[i], strlen(msg[i]), 0, (const struct sockaddr*)&clients[i], sizeof(clients[i])) == -1){
+            fprintf(stderr, "Error : sending message to player %d", i);
+            close(sockfd);
+            return 1;
+        }  
+    }
+
+    fprintf(stderr, "server: the game is starting\n\n");
+    
+    return 0;
+}

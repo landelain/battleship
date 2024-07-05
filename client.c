@@ -41,9 +41,11 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    // initial Hello message 
+    system("clear");
 
-    char msg[100] = "hello";
+    // initial 0 message 
+
+    char msg[500] = {};
 
     if (sendto(sockfd, msg, strlen(msg), 0, (const struct sockaddr*)&server_addr, sizeof(server_addr)) == -1){
         fprintf(stderr, "Error : sending message");
@@ -66,7 +68,7 @@ int main(int argc, char* argv[]){
 
         // print the message
 
-        printf("%s", msg);
+        fprintf(stderr, "%s", msg);
 
     }
 
