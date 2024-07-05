@@ -10,6 +10,9 @@
 #include <arpa/inet.h>
 
 
+int handle_get(char* input, int sockfd, struct sockaddr_in *server_addr);
+
+
 int main(int argc, char* argv[]){
 
     if(argc < 3){
@@ -70,7 +73,64 @@ int main(int argc, char* argv[]){
 
         fprintf(stderr, "%s", msg);
 
+        // get input from user
+        char input[500];
+
+        fprintf(stderr, "\nserver: waiting for input...\n>");
+
+        if(fgets(input, sizeof(input), stdin) == NULL){
+            fprintf(stderr, "Error : reading input\n");
+            close(sockfd);
+            return 1;
+        }
+
+        input[strcspn(input, "\n")] = '\0';
+        handle_get(input, sockfd, &server_addr);
     }
+
+    return 0;
+}
+
+int handle_get(char* input, int sockfd, struct sockaddr_in *server_addr){
+    char* str1 = "cmd";
+    char* str2 = "msg";
+
+    // if the player wants to use a command / cmd
+
+    if(strcmp(input,str1) == 0){
+        fprintf(stderr, "server: enter command\n>");
+
+        if(fgets(input, sizeof(input), stdin) == NULL){
+            fprintf(stderr, "Error : reading input command\n");
+            return 1;
+        }
+        
+
+
+
+    }
+
+    // if the player wants to send a message to the other / msg
+
+    if(strcmp(input, str2) == 0){
+        fprintf(stderr, "server: enter message\n>");
+
+        if(fgets(input, sizeof(input), stdin) == NULL){
+            fprintf(stderr, "Error : reading input command\n");
+            return 1;
+        }
+
+        if (sendto(sockfd, input, strlen(input), 0, (const struct sockaddr*)server_addr, sizeof(*server_addr)) == -1){
+            fprintf(stderr, "Error : sending message");
+            close(sockfd);
+            return 1;
+        }
+
+    }
+    else{
+        return 1;
+    }
+
 
     return 0;
 }

@@ -130,24 +130,9 @@ int handle_new_client(struct sockaddr_in address){
     return -1;
 }
 
-
-/*
-Not sure what we're trying to do here, might be useful to have the message type to be an integer so we can easily check:
-msg[0] == 0 --> msg is of type TXT, so if *(msg+2) == "Hello" --> client is trying to connect
-
-I'd have a function to split message type and info and store that in a struct, then have different functions to handle different
-message types (check tic-tac-toe project)
-
-
-
-IDK what you're trying to do here but strchr(msg, ' ') acts weirdly because there is no space in the received message: "hello"
-so later on it causes a segmentation fault in strncpy
-
-What are code, instruction and delimiter supposed to be?
-*/
 int process_demand(int sockfd, char* msg, int client_n){
 
-    if(atoi(msg) == 0){ // initial message
+    if(atoi(msg) == 0){ // initial 0 message
         if (sendto(sockfd, logo, strlen(logo), 0, (const struct sockaddr*)&clients[client_n], sizeof(clients[client_n])) == -1){
             fprintf(stderr, "Error : sending message");
             close(sockfd);
