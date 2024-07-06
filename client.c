@@ -126,8 +126,9 @@ void* reader(void* data){
         free(line);
         return NULL;
     }
-
-    int msg_len = getline(&line, (size_t*)MAX_INPUT_LENGTH, stdin);
+    while(1){
+        int msg_len = getline(&line, (size_t*)MAX_INPUT_LENGTH, stdin);
+    }
     free(line);
     return NULL;
 }
@@ -143,17 +144,20 @@ void* listener(void* data){
         return NULL;
     }
     socklen_t server_addr_len = sizeof(struct sockaddr_in);
-    ssize_t received_len = recvfrom(client_data->sockfd, msg, MAX_MSG_LENGTH - 1, 0, (struct sockaddr *)&client_data->dest, &server_addr_len);
-    if (received_len == -1) {
-        fprintf(stderr, "ERROR [listener]: %s", strerror(errno));
-        free(msg);
-        return NULL;
+
+    ssize_t received_len;
+    while(1){
+        received_len = recvfrom(client_data->sockfd, msg, MAX_MSG_LENGTH - 1, 0, (struct sockaddr *)&client_data->dest, &server_addr_len);
+        if (received_len == -1) {
+            fprintf(stderr, "ERROR [listener]: %s", strerror(errno));
+            free(msg);
+            return NULL;
+        }
+        msg[received_len] = '\0';
+        // print the message
+        fprintf(stderr, "Received: %s\n", msg);
+
     }
-
-    msg[received_len] = '\0';
-
-    // print the message
-    fprintf(stderr, "Received: %s\n", msg);
     free(msg);
     return NULL;
 }
@@ -222,3 +226,37 @@ int print_out(char* msg){
     return 0;
 }
 
+int handle_line(struct client_data *client_data, char* line){
+    int message_type = check_type(line);
+    switch (message_type){
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+    }
+    return -1;
+}
+
+int handle_msg(struct client_data *client_data, char* msg){
+    int message_type = check_type(msg);
+    return -1;
+}
+
+int check_type(char* msg){
+    if (strlen(msg) < 3){
+        print_out("ERROR [check_type]: message too short");
+        return -1;
+    }
+    if(msg[0] == 'C' && ((msg[1] == 'M') && (msg[2] == 'D'))){
+        return 1; // cmd
+    }
+    if(msg[0] == 'M' && ((msg[1] == 'S') && (msg[2] == 'G'))){
+        return 2; // msg
+    }
+    if(msg[0] == 'T' && ((msg[1] == 'X') && (msg[2] == 'T'))){
+        return 3; // txt [message to/from other player]
+    }
+    return -1;    
+}
