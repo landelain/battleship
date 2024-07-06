@@ -1,5 +1,9 @@
 # battleship
 
+./client <IPAddress> <Port>
+./server <Port> <Size int> <carriers int> <battleships int> <destroyers int> <submarines int>
+
+
 Message format:
     TXT text_string
     FYI your_board opponent_board
