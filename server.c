@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include "server.h"
 
 
 char* logo =
@@ -21,7 +22,7 @@ char* logo =
     "   \\                                                  /\n"
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
     "Game by Angela and Lucas\n\n";
-
+/*
 //network
 int port;
 int connected = 0; 
@@ -34,7 +35,7 @@ int start_game();
 
 //logic
 int size, carriers, battleships, destroyers, submarines; 
-
+*/
 
 int main(int argc, char* argv[]){
 
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]){
     }
 
     struct sockaddr_in *server_addr = malloc(sizeof(struct sockaddr_in));
-    memset(server_addr, 0, sizeof(server_addr));
+    memset(server_addr, 0, sizeof(&server_addr));
     server_addr->sin_family = AF_INET;
     server_addr->sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr->sin_port = htons(port);
@@ -105,7 +106,10 @@ int main(int argc, char* argv[]){
 }
 
 // network
-
+/*
+Checks if the given address belongs to a connected client.
+Returns the index of client or -1 if it's new
+*/
 int is_new_client(struct sockaddr_in address){
 
     for(int i = 0; i<connected; i++){
@@ -117,19 +121,25 @@ int is_new_client(struct sockaddr_in address){
     return -1;
 }
 
+/*
+Adds address to clients[]
+Returns index in clients or -1 if game full
+*/
 int handle_new_client(struct sockaddr_in address){
-
-    if(connected < 2){
-
-        clients[connected] = address;
-        connected += 1;
-        fprintf(stderr,"server: client %d connected\n", connected);
-        return connected-1;
+    if(connected >= 2){
+        return -1;
     }
-
-    return -1;
+    clients[connected] = address;
+    connected += 1;
+    fprintf(stderr,"server: client %d connected\n", connected);
+    return connected-1;
 }
 
+/*
+Processes conection demand:
+    Sends logo, if 2 clients connected starts game
+Returns 0 if successful, 1 if failed
+*/
 int process_demand(int sockfd, char* msg, int client_n){
 
     if(atoi(msg) == 0){ // initial 0 message
@@ -148,6 +158,10 @@ int process_demand(int sockfd, char* msg, int client_n){
 
 // logic
 
+/*
+Sends starting message to players
+Returns 0 if successful, 1 if failed
+*/
 int start_game(int sockfd){
 
     char msg[2][100];
@@ -165,4 +179,17 @@ int start_game(int sockfd){
     fprintf(stderr, "server: the game is starting\n\n");
     
     return 0;
+}
+
+/*
+Thread managing game
+*/
+void* game_control(void*){
+
+}
+/*
+Thread listening to client (2 threads should be started with this funtion)
+*/
+void* listener(void*){
+
 }
